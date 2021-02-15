@@ -1,0 +1,49 @@
+aktual price
+asset value
+expenses - +részletek(rendkívüliek meg ilyesmik)
+equity
+profits in last 5 years
+bonds value (USD)
+debt - +részletek
+growth in last 5 years (+compared to S&P)
+inflation
+total cash
+liabilities
+volume of priority shares
+
+
+API: Company Overview
+
+MarketCapitalization
+Currency
+EBITDA - adó és törlesztők előtti profit
+PERatio
+BookValue - (/share)
+DividendPerShare
+DividendYield - ((osztalék/ár)*100)
+EPS - részvényenkénti nyereség
+RevenuePerShareTTM - (TTM=TrailingTwelveMonths)
+ProfitMargin - =netEarnings/Revenue
+ReturnOnAssetsTTM - az assetben benne vannak az adósságok is, szval nehéz könyveléssel elcsalni (a return on equityben csak a forgótőkéhez viszonyítanak)
+RevenueTTM - bruttó bevétel
+GrossProfitTTM - bruttó bevétel-előállítási költségek
+QuarterlyEarningsGrowthYOY - YOY=YearOverYear
+QuarterlyRevenueGrowthYOY
+TrailingPE - =az elmúlt 12 hónap (átlag)EPS-jéhez viszonyított jelenlegi ár
+PriceToBookRatio
+EVToRevenue - EV=EnterpriseValue
+52WeekHigh
+52WeekLow
+-ebből a kettőből meg lehetne állapítani, hogy mennyire stabil az árfolyam
+SharesOutstanding - összes részvény darabszáma
+PercentInsiders - mekkora részt birtokolnak alkalmazottak
+PercentInstitutions
+PayoutRatio - dividends/total earnings
+LatestQuarter - a dátum, amikor a legutóbbi negyedévest kiadták (valszeg innen van az összes adat is, úgyhogy jó lenne kideríteni, hogy mi volt az aznapi átlag/záróárf.)
+
+
+
+
+
+
+
