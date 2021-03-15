@@ -37,15 +37,21 @@
          <verstretch>0</verstretch>
         </sizepolicy>
        </property>
+       <property name="toolTip">
+        <string>Write here the symbol of a publicly traded stock</string>
+       </property>
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="buttonAdd">
+      <widget class="QPushButton" name="symbolAddButton">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
          <horstretch>2</horstretch>
          <verstretch>0</verstretch>
         </sizepolicy>
+       </property>
+       <property name="toolTip">
+        <string>Click here to add the symbol to the list</string>
        </property>
        <property name="text">
         <string>Add</string>
@@ -55,26 +61,30 @@
     </layout>
    </item>
    <item>
-    <widget class="QFrame" name="frame">
-     <property name="sizePolicy">
-      <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
+    <widget class="QListView" name="listView">
+     <property name="toolTip">
+      <string>Symbols' List</string>
      </property>
-     <property name="frameShape">
-      <enum>QFrame::Box</enum>
+     <property name="statusTip">
+      <string>This is the list of the symbols that are/will be in your table</string>
      </property>
      <property name="frameShadow">
       <enum>QFrame::Plain</enum>
      </property>
-     <property name="lineWidth">
-      <number>1</number>
+    </widget>
+   </item>
+   <item>
+    <widget class="QPushButton" name="symbolDeleteButton">
+     <property name="statusTip">
+      <string>The selected symbol's stock will no longer be displayed in the table</string>
+     </property>
+     <property name="text">
+      <string>Delete slected item</string>
      </property>
     </widget>
    </item>
    <item>
-    <widget class="QDialogButtonBox" name="buttonBox">
+    <widget class="QDialogButtonBox" name="dialogButtonBox">
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
      </property>
@@ -88,7 +98,7 @@
  <resources/>
  <connections>
   <connection>
-   <sender>buttonBox</sender>
+   <sender>dialogButtonBox</sender>
    <signal>accepted()</signal>
    <receiver>Dialog</receiver>
    <slot>accept()</slot>
@@ -104,7 +114,7 @@
    </hints>
   </connection>
   <connection>
-   <sender>buttonBox</sender>
+   <sender>dialogButtonBox</sender>
    <signal>rejected()</signal>
    <receiver>Dialog</receiver>
    <slot>reject()</slot>

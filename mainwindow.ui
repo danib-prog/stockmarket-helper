@@ -91,6 +91,9 @@
    <property name="toolTip">
     <string>Which businesses do you want to inspect?</string>
    </property>
+   <property name="statusTip">
+    <string>A selection menu for publicly traded enterprises</string>
+   </property>
    <property name="shortcut">
     <string>Alt+B</string>
    </property>
@@ -101,6 +104,9 @@
    </property>
    <property name="toolTip">
     <string>What aspects of businesses do you want to see?</string>
+   </property>
+   <property name="statusTip">
+    <string>A selection menu for what aspects of businesses to show</string>
    </property>
    <property name="shortcut">
     <string>Alt+A</string>
