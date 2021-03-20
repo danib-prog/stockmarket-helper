@@ -3,6 +3,7 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 import scraper
+import pandas as pd
 
 apikey = None
 
@@ -41,13 +42,17 @@ aspects_ui = aspects.Ui_Dialog
 
 
 class MainWindow(QMainWindow, mainwindow_ui):
-    aspects_ = scraper.aspects
+    aspects_ = scraper.all_columns
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.setupUi(self)
 
         self.symbols = []
-        self.symbolmodel = SymbolListModel(self)
+        self.symbols_loaded = {}
+
+        self.stockstable = pd.DataFrame()
+        self.stocksmodel = StocksTableModel(self)
+        self.tableView.setModel(self.stocksmodel)
 
         self.aspects_shown = []
         for a in self.aspects_:
@@ -85,11 +90,46 @@ class MainWindow(QMainWindow, mainwindow_ui):
                            2: 'SharesOutstanding',
                            3: 'totalAssets'}
 
+    def onSymbolsChanged(self):
+        stocks = []
+        for symbol in self.symbols:
+            if symbol not in self.symbols_loaded:
+                self.symbols_loaded.update({symbol: scraper.Stock(symbol, apikey)})
+
+            stocks.append(self.symbols_loaded[symbol])
+
+        self.stockstable = scraper.overviewboard(stocks)
+        print(self.stockstable)
+        self.stocksmodel.layoutChanged.emit()
+
+
+class StocksTableModel(QAbstractTableModel):
+    def __init__(self, parent_, *args, **kwargs):
+        super(StocksTableModel, self).__init__(*args, **kwargs)
+        self.table = parent_.stockstable
+
+    def data(self, index, role):
+        if role == Qt.DisplayRole:
+            value = self.table.iloc[index.row(), index.column()]
+            return str(value)
+
+    def rowCount(self, index):
+        return self.table.shape[0]
+
+    def columnCount(self, index):
+        return self.table.shape[1]
+
+    def headerData(self, section, orientation, role):
+        # section is the index of the column/row.
+        if role == Qt.DisplayRole:
+            if orientation == Qt.Horizontal:
+                return str(self.table.columns[section])
+
 
 class SymbolListModel(QAbstractListModel):
     def __init__(self, parent_, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.symbols = parent_.symbols
+        self.symbols = parent_.symbolsbuffer
 
     def data(self, index, role):
         if role == Qt.DisplayRole:
@@ -105,10 +145,12 @@ class StockSelectorDialog(QDialog, stockselector_ui):
     def __init__(self, parent_, *args, **kwargs):
         super(StockSelectorDialog, self).__init__(*args, **kwargs)
         self.setupUi(self)
-        self.symbols = parent_.symbols
 
-        self.symbolmodel = parent_.symbolmodel
-        self.listView.setModel(parent_.symbolmodel)
+        self.parent_ = parent_
+        self.symbolsbuffer = parent_.symbols.copy()
+
+        self.symbolmodel = SymbolListModel(self)
+        self.listView.setModel(self.symbolmodel)
 
         self.symbolAddButton.clicked.connect(self.onAddButtonClicked)
         self.symbolDeleteButton.clicked.connect(self.onDeleteButtonClicked)
@@ -116,7 +158,7 @@ class StockSelectorDialog(QDialog, stockselector_ui):
     def onAddButtonClicked(self, s):
         symbol = self.symbolEdit.text()
         if symbol:
-            self.symbols.append(symbol)
+            self.symbolsbuffer.append(symbol)
             self.symbolmodel.layoutChanged.emit()
             self.symbolEdit.setText("")
 
@@ -124,10 +166,15 @@ class StockSelectorDialog(QDialog, stockselector_ui):
         indexes = self.listView.selectedIndexes()
         if indexes:
             for i in indexes:
-                del self.symbols[i.row()]
+                del self.symbolsbuffer[i.row()]
 
             self.symbolmodel.layoutChanged.emit()
             self.listView.clearSelection()
+
+    def accept(self):
+        self.parent_.symbols = self.symbolsbuffer
+        self.parent_.onSymbolsChanged()
+        super(StockSelectorDialog, self).accept()
 
 
 class AspectsDialog(QDialog, aspects_ui):
@@ -140,14 +187,14 @@ class AspectsDialog(QDialog, aspects_ui):
         self.aspectsWidget.setLayout(layout)
 
     def aspectsIntoLayout(self):
-        tristates = ['Symbol', 'Currency']
+        musts = ['Symbol', 'Currency']
         rowcount = (len(self.parent_.aspects_shown) // 2) + 1
 
         layout = QGridLayout()
         layout.addWidget(QLabel('  '), rowcount, 2)
 
         for i, a in enumerate(self.parent_.aspects_shown):
-            if a not in tristates:
+            if a not in musts:
                 checkbox = QCheckBox(a[0])
                 checkbox.setCheckState(a[1])
                 checkbox.stateChanged.connect(lambda s, i=i, aspect=a[0]: self.checkSateChanged(s, i, aspect))
@@ -161,7 +208,12 @@ class AspectsDialog(QDialog, aspects_ui):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    window = MainWindow()
+    window = ApiKeyWindow()
     window.show()
     app.exec_()
+
+    mainapp = QApplication(sys.argv)
+    window = MainWindow()
+    window.show()
+    mainapp.exec_()
 

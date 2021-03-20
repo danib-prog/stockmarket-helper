@@ -3,26 +3,38 @@ import requests
 from bs4 import BeautifulSoup
 import time
 import numpy as np
+from copy import copy
 
 headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.150 Safari/537.36'}
-aspects = ('AssetType', 'Description', 'Exchange', 'Country',
-           'Sector', 'Industry', 'Address', 'FullTimeEmployees',
-           'FiscalYearEnd', 'PEGRatio', 'OperatingMarginTTM',
-           'ReturnOnEquityTTM', 'DilutedEPSTTM', 'AnalystTargetPrice',
-           'ForwardPE', 'PriceToSalesRatioTTM', 'EVToEBITDA',
-           'Beta', '50DayMovingAverage', '200DayMovingAverage',
-           'SharesFloat', 'SharesShort', 'SharesShortPriorMonth',
-           'ShortRatio', 'ShortPercentOutstanding', 'ShortPercentFloat',
-           'ForwardAnnualDividendRate', 'ForwardAnnualDividendYield',
-           'DividendDate', 'ExDividendDate', 'LastSplitFactor',
-           'LastSplitDate')
 
+#These are only the columns of balanceSheet that we are interested about
+overview_columns = ['Symbol', 'Name', 'Exchange', 'Currency', 'FullTimeEmployees',
+                    'LatestQuarter', 'MarketCapitalization', 'EBITDA',
+                    'PERatio', 'BookValue', 'DividendPerShare',
+                    'DividendYield', 'EPS', 'RevenuePerShareTTM',
+                    'ProfitMargin', 'ReturnOnAssetsTTM', 'RevenueTTM',
+                    'GrossProfitTTM', 'QuarterlyEarningsGrowthYOY',
+                    'QuarterlyRevenueGrowthYOY', 'TrailingPE', 'PriceToBookRatio',
+                    'EVToRevenue', '52WeekHigh', '52WeekLow', 'SharesOutstanding',
+                    'PercentInsiders', 'PercentInstitutions', 'PayoutRatio']
+#These are only the columns of incomeStatement that we are interested about
+income_columns = ['extraordinaryItems', 'capitalExpenditures',
+                  'totalOperatingExpense', 'interestExpense',
+                  'incomeTaxExpense', 'totalOtherIncomeExpense']
+#These are only the columns of balanceSheet that we are interested about
+balance_columns = ['totalAssets', 'totalLiabilities', 'shortTermDebt',
+                   'longTermDebt', 'cash', 'cashAndShortTermInvestments',
+                   'totalShareholderEquity', 'totalPermanentEquity',
+                   'commonStockTotalEquity', 'preferredStockTotalEquity']
+#A list of all the columns
+all_columns = copy(overview_columns + income_columns + balance_columns)
 
 class Stock():
     url = 'https://www.alphavantage.co/query'
 
-    def __init__(self, symbol):
+    def __init__(self, symbol, apikey):
         self.symbol = symbol
+        self.apikey = apikey
 
         self.overview = 0
         self.incomeStatement = 0
@@ -32,7 +44,7 @@ class Stock():
         if self.overview == 0:
             payload = {'function': 'OVERVIEW',
                        'symbol': self.symbol,
-                       'apikey': apikey}
+                       'apikey': self.apikey}
             r = requests.get(self.url, headers=headers, params=payload)
             page_html = r.content
             r.close()
@@ -51,7 +63,7 @@ class Stock():
         if self.incomeStatement == 0:
             payload = {'function': 'INCOME_STATEMENT',
                        'symbol': self.symbol,
-                       'apikey': apikey}
+                       'apikey': self.apikey}
             r = requests.get(self.url, headers=headers, params=payload)
             page_html = r.content
             r.close()
@@ -72,7 +84,7 @@ class Stock():
         if self.balanceSheet == 0:
             payload = {'function': 'BALANCE_SHEET',
                        'symbol': self.symbol,
-                       'apikey': apikey}
+                       'apikey': self.apikey}
             r = requests.get(self.url, headers=headers, params=payload)
             page_html = r.content
             r.close()
@@ -125,31 +137,9 @@ def overviewboard(stocks):
             balanceSheet1 = stock.get_balanceSheet(i)
             balanceSheet = balanceSheet.append(balanceSheet1)
 
-    #These are the columns that we don't need from overview
-    bullshit = ['AssetType', 'Description', 'Exchange', 'Country',
-                'Sector', 'Industry', 'Address', 'FullTimeEmployees',
-                'FiscalYearEnd', 'PEGRatio', 'OperatingMarginTTM',
-                'ReturnOnEquityTTM', 'DilutedEPSTTM', 'AnalystTargetPrice',
-                'ForwardPE', 'PriceToSalesRatioTTM', 'EVToEBITDA',
-                'Beta', '50DayMovingAverage', '200DayMovingAverage',
-                'SharesFloat', 'SharesShort', 'SharesShortPriorMonth',
-                'ShortRatio', 'ShortPercentOutstanding', 'ShortPercentFloat',
-                'ForwardAnnualDividendRate', 'ForwardAnnualDividendYield',
-                'DividendDate', 'ExDividendDate', 'LastSplitFactor',
-                'LastSplitDate']
-    #These are only the columns of incomeStatement that we are interested about
-    income_columns = ['extraordinaryItems', 'capitalExpenditures',
-                      'totalOperatingExpense', 'interestExpense',
-                      'incomeTaxExpense', 'totalOtherIncomeExpense']
-    #These are only the columns of balanceSheet that we are interested about
-    balance_columns = ['totalAssets', 'totalLiabilities', 'shortTermDebt',
-                       'longTermDebt', 'cash', 'cashAndShortTermInvestments',
-                       'totalShareholderEquity', 'totalPermanentEquity',
-                       'commonStockTotalEquity', 'preferredStockTotalEquity']
-
-    #These tries are only necessary in case of an invalid API request, so thus the absence of raiseErrors
+    #These tries are only necessary in case of an invalid API request, so thus the absence of error specifications
     try:
-        overview.drop(labels=bullshit, axis=1, inplace=True)
+        overview = overview.loc[overview_columns]
     except:
         pass
     try:
@@ -167,6 +157,7 @@ def overviewboard(stocks):
 
 #Just for testing purposes
 if __name__ == '__main__':
+    apikey = input("Enter your API key: ")
     symbols = []
     print('You can enter the symbols of the stocks you want to get informed about \n'
           'one by one, or enter 000 if you finished with them.')
@@ -179,7 +170,7 @@ if __name__ == '__main__':
 
     stocks = []
     for s in symbols:
-        stock = Stock(s)
+        stock = Stock(s, apikey)
         stocks.append(stock)
 
     print(overviewboard(stocks))
