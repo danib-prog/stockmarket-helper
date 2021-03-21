@@ -92,38 +92,40 @@ class MainWindow(QMainWindow, mainwindow_ui):
 
     def onSymbolsChanged(self):
         stocks = []
-        for symbol in self.symbols:
-            if symbol not in self.symbols_loaded:
-                self.symbols_loaded.update({symbol: scraper.Stock(symbol, apikey)})
+        if self.symbols:
+            for symbol in self.symbols:
+                if symbol not in self.symbols_loaded:
+                    self.symbols_loaded.update({symbol: scraper.Stock(symbol, apikey)})
 
-            stocks.append(self.symbols_loaded[symbol])
+                stocks.append(self.symbols_loaded[symbol])
 
-        self.stockstable = scraper.overviewboard(stocks)
-        print(self.stockstable)
-        self.stocksmodel.layoutChanged.emit()
+            self.stockstable = scraper.overviewboard(stocks)
+            #print(self.stockstable)
+            self.stocksmodel.layoutChanged.emit()
 
 
 class StocksTableModel(QAbstractTableModel):
     def __init__(self, parent_, *args, **kwargs):
         super(StocksTableModel, self).__init__(*args, **kwargs)
-        self.table = parent_.stockstable
+        self.parent_ = parent_
 
     def data(self, index, role):
         if role == Qt.DisplayRole:
-            value = self.table.iloc[index.row(), index.column()]
+            value = self.parent_.stockstable.iloc[index.row(), index.column()]
             return str(value)
 
     def rowCount(self, index):
-        return self.table.shape[0]
+        #print(self.table.shape)
+        return self.parent_.stockstable.shape[0]
 
     def columnCount(self, index):
-        return self.table.shape[1]
+        return self.parent_.stockstable.shape[1]
 
     def headerData(self, section, orientation, role):
         # section is the index of the column/row.
         if role == Qt.DisplayRole:
             if orientation == Qt.Horizontal:
-                return str(self.table.columns[section])
+                return str(self.parent_.stockstable.columns[section])
 
 
 class SymbolListModel(QAbstractListModel):

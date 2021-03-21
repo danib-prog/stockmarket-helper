@@ -36,12 +36,12 @@ class Stock():
         self.symbol = symbol
         self.apikey = apikey
 
-        self.overview = 0
-        self.incomeStatement = 0
-        self.balanceSheet = 0
+        self.overview = ''
+        self.incomeStatement = ''
+        self.balanceSheet = ''
 
     def get_overview(self, i):
-        if self.overview == 0:
+        if type(self.overview) == type(''):
             payload = {'function': 'OVERVIEW',
                        'symbol': self.symbol,
                        'apikey': self.apikey}
@@ -60,7 +60,7 @@ class Stock():
             return self.overview
 
     def get_incomeStatement(self, i):
-        if self.incomeStatement == 0:
+        if type(self.incomeStatement) == type(''):
             payload = {'function': 'INCOME_STATEMENT',
                        'symbol': self.symbol,
                        'apikey': self.apikey}
@@ -81,7 +81,7 @@ class Stock():
             return self.incomeStatement
 
     def get_balanceSheet(self, i):
-        if self.balanceSheet == 0:
+        if type(self.balanceSheet) == type(''):
             payload = {'function': 'BALANCE_SHEET',
                        'symbol': self.symbol,
                        'apikey': self.apikey}
