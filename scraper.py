@@ -16,19 +16,19 @@ overview_columns = ['Symbol', 'Name', 'Exchange', 'Currency', 'FullTimeEmployees
                     'GrossProfitTTM', 'QuarterlyEarningsGrowthYOY',
                     'QuarterlyRevenueGrowthYOY', 'TrailingPE', 'PriceToBookRatio',
                     'EVToRevenue', '52WeekHigh', '52WeekLow', 'SharesOutstanding',
-                    'PercentInsiders', 'PercentInstitutions', 'PayoutRatio']
+                    'PercentInsiders', 'PercentInstitutions', 'PayoutRatio',
+                    'Graham Number']
 #These are only the columns of incomeStatement that we are interested about
-income_columns = ['extraordinaryItems', 'capitalExpenditures',
-                  'totalOperatingExpense', 'interestExpense',
-                  'incomeTaxExpense', 'totalOtherIncomeExpense']
+income_columns = ['interestExpense', 'operatingExpenses', 'netIncome',
+                  'incomeTaxExpense']
 #These are only the columns of balanceSheet that we are interested about
 balance_columns = ['totalAssets', 'totalLiabilities', 'shortTermDebt',
-                   'longTermDebt', 'cash', 'cashAndShortTermInvestments',
-                   'totalShareholderEquity', 'totalPermanentEquity',
-                   'commonStockTotalEquity', 'preferredStockTotalEquity']
+                   'longTermDebt', 'cashAndShortTermInvestments',
+                   'totalShareholderEquity']
 #A list of all the columns
 all_columns = copy(overview_columns + income_columns + balance_columns)
 
+#A class containing all infos about a publicly traded company
 class Stock():
     url = 'https://www.alphavantage.co/query'
 
@@ -36,6 +36,7 @@ class Stock():
         self.symbol = symbol
         self.apikey = apikey
 
+        #Setting basic values to back-test and only make an api request if neccessary
         self.overview = ''
         self.incomeStatement = ''
         self.balanceSheet = ''
@@ -50,8 +51,9 @@ class Stock():
             r.close()
 
             overview_soup = BeautifulSoup(page_html, "html.parser")
-            overview_dict = eval(str(overview_soup))
+            overview_dict = eval(str(overview_soup))                            #The retrived soup can be implemented as a dictionary
 
+            #Getting the values into a DataFrame I can easily work with
             overview = pd.DataFrame(overview_dict, index=[i,])
             self.overview = overview
             time.sleep(12)
@@ -69,14 +71,19 @@ class Stock():
             r.close()
 
             incomest_soup = BeautifulSoup(page_html, "html.parser")
-            incomest_dict = eval(str(incomest_soup))
+            incomest_dict = eval(str(incomest_soup))                            #The retrived soup can be implemented as a dictionary
 
-            latestIncomeStatement_dict = incomest_dict['annualReports'][0]
-            latestIncomeStatement = pd.DataFrame(latestIncomeStatement_dict, index=[i,])
-            self.incomeStatement = latestIncomeStatement
+            #Getting the values into a DataFrame I can easily work with
+            if incomest_dict:
+                latestIncomeStatement_dict = incomest_dict['annualReports'][0]
+                latestIncomeStatement = pd.DataFrame(latestIncomeStatement_dict, index=[i,])
+                self.incomeStatement = latestIncomeStatement
 
-            time.sleep(12)
-            return latestIncomeStatement
+                time.sleep(12)
+                return latestIncomeStatement
+            else:
+                return pd.DataFrame()
+
         else:
             return self.incomeStatement
 
@@ -90,25 +97,34 @@ class Stock():
             r.close()
 
             balancesht_soup = BeautifulSoup(page_html, "html.parser")
-            balancesht_dict = eval(str(balancesht_soup))
+            balancesht_dict = eval(str(balancesht_soup))                        #The retrived soup can be implemented as a dictionary
 
-            latestBalanceSheet_dict = balancesht_dict['annualReports'][0]
-            latestBalanceSheet = pd.DataFrame(latestBalanceSheet_dict, index=[i,])
-            self.balanceSheet = latestBalanceSheet
+            #Getting the values into a DataFrame I can easily work with
+            if balancesht_dict:
+                latestBalanceSheet_dict = balancesht_dict['annualReports'][0]
+                latestBalanceSheet = pd.DataFrame(latestBalanceSheet_dict, index=[i,])
+                self.balanceSheet = latestBalanceSheet
 
-            time.sleep(12)
-            return latestBalanceSheet
+                time.sleep(12)
+                return latestBalanceSheet
+            else:
+                return pd.DataFrame()
+
         else:
             return self.balanceSheet
 
+
+#The Graham Number is an indicator for what is an acceptable price for the given stock
 def graham_number(stockOverview):
-    eps = stockOverview['EPS'].iloc[0]
-    eps = float(eps)
-    bookV = stockOverview['BookValue'].iloc[0]
-    bookV = float(bookV)
-    grahamsquare = 22.5 * eps * bookV
-    graham = np.sqrt(grahamsquare)
-    return graham
+    if not stockOverview.empty:
+        eps = stockOverview['EPS'].iloc[0]
+        eps = float(eps)
+        bookV = stockOverview['BookValue'].iloc[0]
+        bookV = float(bookV)
+        grahamsquare = 22.5 * eps * bookV
+        graham = np.sqrt(grahamsquare)
+        return graham
+
 
 def overviewboard(stocks):
     overview = None
@@ -137,19 +153,25 @@ def overviewboard(stocks):
             balanceSheet1 = stock.get_balanceSheet(i)
             balanceSheet = balanceSheet.append(balanceSheet1)
 
-    #These tries are only necessary in case of an invalid API request, so thus the absence of error specifications
+    #These tries are only necessary in case of an invalid API request, or if something with the colums lists is messed
     try:
-        overview = overview.loc[overview_columns]
-    except:
-        pass
+        overview = overview.loc[:, overview_columns]
+        print("overview success")
+    except Exception as e:
+        print(e)
+        print("Failed to sort out Overview")
     try:
-        incomeStatement = incomeStatement.loc[income_columns]
-    except:
-        pass
+        incomeStatement = incomeStatement.loc[:, income_columns]
+        print("incomestatement success")
+    except Exception as e:
+        print(e)
+        print("Failed to sort out IncomeStatement")
     try:
-        balanceSheet = balanceSheet.loc[balance_columns]
-    except:
-        pass
+        balanceSheet = balanceSheet.loc[:, balance_columns]
+        print("balancesheet success")
+    except Exception as e:
+        print(e)
+        print("Failed to sort out BalanceSheet")
 
     overviewb = pd.concat([overview, incomeStatement, balanceSheet], axis=1)
     return overviewb

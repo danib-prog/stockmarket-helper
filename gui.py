@@ -5,11 +5,14 @@ from PyQt5.QtGui import *
 import scraper
 import pandas as pd
 
+
 apikey = None
 
+#This window retrieves the api key of the user for further usage
 class ApiKeyWindow(QMainWindow):
     def __init__(self):
         super(ApiKeyWindow, self).__init__()
+        self.setWindowTitle("Stockmarket Helper/API key entry")
 
         layout = QHBoxLayout()
         layout.addWidget(QLabel("Your Alpha Vantage API key: "))
@@ -29,6 +32,7 @@ class ApiKeyWindow(QMainWindow):
         apikey = self.lineedit.text()
         self.close()
 
+
 import mainwindow
 import stockselector
 import aspects
@@ -38,35 +42,30 @@ stockselector_ui = stockselector.Ui_Dialog
 aspects_ui = aspects.Ui_Dialog
 
 
-
-
-
 class MainWindow(QMainWindow, mainwindow_ui):
     aspects_ = scraper.all_columns
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.setupUi(self)
+        self.setWindowTitle("Stockmarket Helper")
 
-        self.symbols = []
-        self.symbols_loaded = {}
+        self.symbols = []   #The symbols of businesses that need to be shown
+        self.symbols_loaded = {} #symbols in memory {symbol: scraper.Stock instance}
 
         self.stockstable = pd.DataFrame()
         self.stocksmodel = StocksTableModel(self)
-        self.tableView.setModel(self.stocksmodel)
+        self.sortingmodel = QSortFilterProxyModel(self)
+        self.sortingmodel.setSourceModel(self.stocksmodel)
+        self.tableView.setModel(self.sortingmodel)
+        self.tableView.setSortingEnabled(True)
 
+        #What aspects are currently showing in the table
         self.aspects_shown = []
         for a in self.aspects_:
-            tup = (a, 2)
+            tup = (a, Qt.CheckState.Checked)
             self.aspects_shown.append(tup)
 
-        self.toolBar.addWidget(QLabel('Sort by:'))
-        sortby_combo = QComboBox()
-        sortby_combo.addItems(["Graham's number", "Market Capitalization",
-                               "Number of shares", "Total Assets"])
-        sortby_combo.currentIndexChanged.connect(self.onSortByComboIndexChange)
-        sortby_combo.setStatusTip("A selection menu for on what aspects the sorting is based")
-        sortby_combo.setToolTip("Aspects to sort by")
-        self.toolBar.addWidget(sortby_combo)
+        self.toolBar.addWidget(QLabel('You can sort by clicking on column headers'))
 
         self.actionBusinesses.setIcon(QIcon("./icons-shadowless-32/document-text.png"))
         self.actionBusinesses.triggered.connect(self.onActionBusinessesTriggered)
@@ -84,12 +83,7 @@ class MainWindow(QMainWindow, mainwindow_ui):
         dlg.setWindowTitle("Aspects' Selector")
         dlg.exec_()
 
-    def onSortByComboIndexChange(self, i):
-        index_to_aspect = {0: 'Graham Number',
-                           1: 'MarketCapitalization',
-                           2: 'SharesOutstanding',
-                           3: 'totalAssets'}
-
+    #It's called when the Stockselector dialog is accepted
     def onSymbolsChanged(self):
         stocks = []
         if self.symbols:
@@ -149,7 +143,7 @@ class StockSelectorDialog(QDialog, stockselector_ui):
         self.setupUi(self)
 
         self.parent_ = parent_
-        self.symbolsbuffer = parent_.symbols.copy()
+        self.symbolsbuffer = parent_.symbols.copy()   #So as not to mess with the actual symbols in case the dialog is rejected
 
         self.symbolmodel = SymbolListModel(self)
         self.listView.setModel(self.symbolmodel)
@@ -174,7 +168,7 @@ class StockSelectorDialog(QDialog, stockselector_ui):
             self.listView.clearSelection()
 
     def accept(self):
-        self.parent_.symbols = self.symbolsbuffer
+        self.parent_.symbols = self.symbolsbuffer #Refreshing the actual symbols
         self.parent_.onSymbolsChanged()
         super(StockSelectorDialog, self).accept()
 
@@ -193,10 +187,10 @@ class AspectsDialog(QDialog, aspects_ui):
         rowcount = (len(self.parent_.aspects_shown) // 2) + 1
 
         layout = QGridLayout()
-        layout.addWidget(QLabel('  '), rowcount, 2)
+        layout.addWidget(QLabel('  '), rowcount, 2) #Presetting the dimendions of the layout
 
         for i, a in enumerate(self.parent_.aspects_shown):
-            if a not in musts:
+            if a[0] not in musts:
                 checkbox = QCheckBox(a[0])
                 checkbox.setCheckState(a[1])
                 checkbox.stateChanged.connect(lambda s, i=i, aspect=a[0]: self.checkSateChanged(s, i, aspect))
@@ -206,6 +200,10 @@ class AspectsDialog(QDialog, aspects_ui):
 
     def checkSateChanged(self, state, index, aspect):
         self.parent_.aspects_shown[index] = (aspect, state)
+        if state == Qt.CheckState.Checked:
+            self.parent_.tableView.showColumn(index)
+        else:
+            self.parent_.tableView.hideColumn(index)
 
 
 if __name__ == "__main__":
