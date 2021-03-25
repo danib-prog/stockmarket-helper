@@ -17,7 +17,7 @@ class ApiKeyWindow(QMainWindow):
         layout = QHBoxLayout()
         layout.addWidget(QLabel("Your Alpha Vantage API key: "))
         self.lineedit = QLineEdit()
-        self.lineedit.returnPressed.connect(self.onOkButtonClicked)
+        self.lineedit.returnPressed.connect(lambda: self.onOkButtonClicked(0))
         layout.addWidget(self.lineedit)
         self.okbutton = QPushButton('Ok')
         self.okbutton.clicked.connect(self.onOkButtonClicked)

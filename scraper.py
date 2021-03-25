@@ -156,19 +156,19 @@ def overviewboard(stocks):
     #These tries are only necessary in case of an invalid API request, or if something with the colums lists is messed
     try:
         overview = overview.loc[:, overview_columns]
-        print("overview success")
+        #print("overview success")
     except Exception as e:
         print(e)
         print("Failed to sort out Overview")
     try:
         incomeStatement = incomeStatement.loc[:, income_columns]
-        print("incomestatement success")
+        #print("incomestatement success")
     except Exception as e:
         print(e)
         print("Failed to sort out IncomeStatement")
     try:
         balanceSheet = balanceSheet.loc[:, balance_columns]
-        print("balancesheet success")
+        #print("balancesheet success")
     except Exception as e:
         print(e)
         print("Failed to sort out BalanceSheet")
